@@ -19,12 +19,22 @@ ATLAS_URI = os.getenv("MONGODB_URI")
 if not ATLAS_URI:
     raise ValueError("ATLAS_URI not found in .env file")
 
+# Configure allowed origins
+origins = [
+    "http://localhost:5500",
+    "http://localhost:8000",
+    "http://127.0.0.1:5500",
+    "http://127.0.0.1:8000",
+    "https://crm-fullstack-frontend.onrender.com"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Update based on your needs
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    expose_headers=["*"]
 )
 
 client = AsyncIOMotorClient(ATLAS_URI)
@@ -65,7 +75,7 @@ class Customer(BaseModel):
     size: Optional[str] = None
     created_at: Optional[str] = None
 
-@app.post("/customers")
+@app.post("/api/customers")
 async def create_customer(customer: Customer):
     try:
         # Set created_at if not provided
@@ -88,7 +98,7 @@ async def create_customer(customer: Customer):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create customer: {str(e)}")
 
-@app.get("/customers")
+@app.get("/api/customers")
 async def get_customers():
     customers = await customers_collection.find().to_list(100)
     return serialize_docs(customers)
@@ -170,9 +180,13 @@ async def get_campaign_customers(campaign_id: int):
 async def get_dashboard_stats():
     """Get dashboard statistics"""
     try:
+        print("Fetching dashboard stats...")
         total_campaigns = await campaigns_collection.count_documents({})
+        print(f"Total campaigns: {total_campaigns}")
         total_customers = await customers_collection.count_documents({})
+        print(f"Total customers: {total_customers}")
         total_mappings = await mapcamp_collection.count_documents({})
+        print(f"Total mappings: {total_mappings}")
         
         city_pipeline = [
             {"$group": {"_id": "$city", "count": {"$sum": 1}}},
