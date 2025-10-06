@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta tags for character encoding and responsive design -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI CRM - Customer Management System</title>
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo and brand name -->
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <span>AI CRM System</span>
+            </div>
+            <!-- Navigation menu items -->
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link active">
+                    <i class="fas fa-user-plus"></i> Add Customer
+                </a>
+                <a href="campaigns.html" class="nav-link">
+                    <i class="fas fa-bullhorn"></i> Campaigns
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-container">
+        <!-- Hero Section with gradient background and introduction -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <i class="fas fa-sparkles"></i> AI-Powered CRM
+                </h1>
+                <p class="hero-subtitle">
+                    Intelligent customer management with automated campaign creation and next-action suggestions
+                </p>
+                <!-- Quick stats display -->
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <div class="stat-number" id="totalCustomers">-</div>
+                            <div class="stat-label">Total Customers</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-bullhorn"></i>
+                        <div>
+                            <div class="stat-number" id="totalCampaigns">-</div>
+                            <div class="stat-label">Active Campaigns</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Data Ingestion Form Section -->
+        <div class="form-container">
+            <div class="form-header">
+                <h2><i class="fas fa-user-plus"></i> Add New Customer</h2>
+                <p>Enter customer details to add them to the CRM system</p>
+            </div>
+
+            <!-- Customer Form - All fields from the database schema -->
+            <form id="customerForm" class="customer-form">
+                <!-- Form organized in a grid layout for better UX -->
+                <div class="form-grid">
+                    <!-- Name field - Required -->
+                    <div class="form-group full-width">
+                        <label for="name">
+                            <i class="fas fa-building"></i> Business Name *
+                        </label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            required 
+                            placeholder="e.g., Diva Divine Hair Extensions"
+                            class="form-input">
+                    </div>
+
+                    <!-- Contact Number -->
+                    <div class="form-group">
+                        <label for="contact_number">
+                            <i class="fas fa-phone"></i> Contact Number
+                        </label>
+                        <input 
+                            type="text" 
+                            id="contact_number" 
+                            name="contact_number" 
+                            placeholder="e.g., 96503 77003"
+                            class="form-input">
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="e.g., contact@business.com"
+                            class="form-input">
+                    </div>
+
+                    <!-- Address - Full width -->
+                    <div class="form-group full-width">
+                        <label for="address">
+                            <i class="fas fa-map-marker-alt"></i> Address
+                        </label>
+                        <input 
+                            type="text" 
+                            id="address" 
+                            name="address" 
+                            placeholder="e.g., Shop 3, Nizamuddin East Market, New Delhi 110013"
+                            class="form-input">
+                    </div>
+
+                    <!-- City -->
+                    <div class="form-group">
+                        <label for="city">
+                            <i class="fas fa-city"></i> City
+                        </label>
+                        <input 
+                            type="text" 
+                            id="city" 
+                            name="city" 
+                            placeholder="e.g., Delhi"
+                            class="form-input">
+                    </div>
+
+                    <!-- Business Size -->
+                    <div class="form-group">
+                        <label for="size">
+                            <i class="fas fa-chart-line"></i> Business Size
+                        </label>
+                        <select id="size" name="size" class="form-input">
+                            <option value="">Select Size</option>
+                            <option value="Small">Small</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Large">Large</option>
+                        </select>
+                    </div>
+
+                    <!-- Instagram ID -->
+                    <div class="form-group">
+                        <label for="instagram_id">
+                            <i class="fab fa-instagram"></i> Instagram ID
+                        </label>
+                        <input 
+                            type="text" 
+                            id="instagram_id" 
+                            name="instagram_id" 
+                            placeholder="e.g., @businessname"
+                            class="form-input">
+                    </div>
+
+                    <!-- Google Maps Link -->
+                    <div class="form-group">
+                        <label for="google_maps_link">
+                            <i class="fas fa-map"></i> Google Maps Link
+                        </label>
+                        <input 
+                            type="url" 
+                            id="google_maps_link" 
+                            name="google_maps_link" 
+                            placeholder="Paste Google Maps link"
+                            class="form-input">
+                    </div>
+
+                    <!-- Description - Full width textarea -->
+                    <div class="form-group full-width">
+                        <label for="description">
+                            <i class="fas fa-info-circle"></i> Description
+                        </label>
+                        <textarea 
+                            id="description" 
+                            name="description" 
+                            placeholder="Describe the business, products, or services..."
+                            class="form-textarea"
+                            rows="4"></textarea>
+                    </div>
+                </div>
+
+                <!-- Form submission button -->
+                <button type="submit" class="submit-button">
+                    <i class="fas fa-plus-circle"></i> Add Customer
+                </button>
+            </form>
+
+            <!-- Status messages display area -->
+            <div id="status" class="status-message"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 AI CRM System. Powered by Agentic AI & FastAPI</p>
+    </footer>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000' 
+            : 'https://crm-fullstack.onrender.com';
+
+        // Load dashboard stats on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardStats();
+        });
+
+        /**
+         * Fetch and display dashboard statistics
+         * Shows total customers and campaigns
+         */
+        async function loadDashboardStats() {
+            try {
+                console.log('Fetching stats from:', `${API_BASE_URL}/api/stats`);
+                // Fetch stats from backend API
+                const response = await fetch(`${API_BASE_URL}/api/stats`);
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`Failed to fetch stats: ${response.status} ${errorText}`);
+                }
+                
+                const stats = await response.json();
+                
+                // Update the stat displays
+                document.getElementById('totalCustomers').textContent = stats.total_customers || 0;
+                document.getElementById('totalCampaigns').textContent = stats.total_campaigns || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                // Show dash if stats can't be loaded
+                document.getElementById('totalCustomers').textContent = '-';
+                document.getElementById('totalCampaigns').textContent = '-';
+            }
+        }
+
+        /**
+         * Handle customer form submission
+         * Validates and sends customer data to backend
+         */
+        document.getElementById('customerForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = '';
+            statusElement.className = 'status-message';
+
+            // Show loading state
+            statusElement.textContent = 'Adding customer...';
+            statusElement.className = 'status-message loading';
+
+            // Collect form data
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                contact_number: document.getElementById('contact_number').value.trim() || undefined,
+                address: document.getElementById('address').value.trim() || undefined,
+                instagram_id: document.getElementById('instagram_id').value.trim() || undefined,
+                description: document.getElementById('description').value.trim() || undefined,
+                google_maps_link: document.getElementById('google_maps_link').value.trim() || undefined,
+                email: document.getElementById('email').value.trim() || undefined,
+                city: document.getElementById('city').value.trim() || undefined,
+                size: document.getElementById('size').value || undefined
+            };
+
+            try {
+                // Send POST request to create customer
+                const response = await fetch(`${API_BASE_URL}/api/customers`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to create customer');
+                }
+
+                const result = await response.json();
+                
+                // Show success message
+                statusElement.innerHTML = `
+                    <i class="fas fa-check-circle"></i> 
+                    Customer "${formData.name}" added successfully!
+                `;
+                statusElement.className = 'status-message success';
+                
+                // Reset form
+                document.getElementById('customerForm').reset();
+                
+                // Reload stats
+                loadDashboardStats();
+
+                // Hide success message after 5 seconds
+                setTimeout(() => {
+                    statusElement.textContent = '';
+                    statusElement.className = 'status-message';
+                }, 5000);
+
+            } catch (error) {
+                // Show error message
+                statusElement.innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i> 
+                    Error: ${error.message}
+                `;
+                statusElement.className = 'status-message error';
+            }
+        });
+    </script>
+</body>
+</html>

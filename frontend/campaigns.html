@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta tags for character encoding and responsive design -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Management - AI CRM</title>
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo and brand name -->
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <span>AI CRM System</span>
+            </div>
+            <!-- Navigation menu items -->
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-user-plus"></i> Add Customer
+                </a>
+                <a href="campaigns.html" class="nav-link active">
+                    <i class="fas fa-bullhorn"></i> Campaigns
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-bullhorn"></i> Campaign Management
+                </h1>
+                <p class="page-subtitle">
+                    AI-powered customer segmentation and campaign management
+                </p>
+            </div>
+            <!-- Create Campaign Button -->
+            <button onclick="createCampaigns()" class="primary-button" id="createCampaignBtn">
+                <i class="fas fa-magic"></i> Create Campaigns with AI
+            </button>
+        </div>
+
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb" id="breadcrumb">
+            <div class="breadcrumb-item active" onclick="showCampaignsView()">
+                <i class="fas fa-home"></i>
+                <span>All Campaigns</span>
+            </div>
+        </div>
+
+        <!-- Dynamic Content Area -->
+        <div id="content" class="content-area">
+            <!-- Loading state shown initially -->
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <p>Loading campaigns...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 AI CRM System. Powered by Agentic AI & FastAPI</p>
+    </footer>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000'
+            : 'https://crm-backend-5bhd.onrender.com';
+        
+        // Application State
+        let currentView = 'campaigns';  // Current view state
+        let selectedCampaign = null;    // Currently selected campaign
+        let selectedCustomer = null;    // Currently selected customer
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCampaigns();
+        });
+
+        /**
+         * Create campaigns using AI
+         * Triggers the campaign_creator agent in the backend
+         */
+        async function createCampaigns() {
+            const btn = document.getElementById('createCampaignBtn');
+            const originalText = btn.innerHTML;
+            
+            // Disable button and show loading state
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Campaigns...';
+            
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <h3>🤖 AI Agent is analyzing customer data...</h3>
+                    <p>This may take a moment. The AI is identifying patterns and creating targeted campaigns.</p>
+                </div>
+            `;
+
+            try {
+                // Call the campaign creation endpoint
+                const response = await fetch(`${API_BASE_URL}/api/campaigns/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create campaigns');
+                }
+
+                const result = await response.json();
+                
+                // Show success message
+                content.innerHTML = `
+                    <div class="success-container">
+                        <i class="fas fa-check-circle success-icon"></i>
+                        <h2>Campaigns Created Successfully!</h2>
+                        <p>${result.data.campaigns_created || 'Multiple'} campaigns created with ${result.data.customer_mappings || 'multiple'} customer mappings</p>
+                        <button onclick="loadCampaigns()" class="primary-button">
+                            <i class="fas fa-eye"></i> View Campaigns
+                        </button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                // Show error message
+                content.innerHTML = `
+                    <div class="error-container">
+                        <i class="fas fa-exclamation-triangle error-icon"></i>
+                        <h2>Error Creating Campaigns</h2>
+                        <p>${error.message}</p>
+                        <button onclick="loadCampaigns()" class="secondary-button">
+                            <i class="fas fa-arrow-left"></i> Back to Campaigns
+                        </button>
+                    </div>
+                `;
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        /**
+         * Load and display all campaigns
+         */
+        async function loadCampaigns() {
+            currentView = 'campaigns';
+            selectedCampaign = null;
+            selectedCustomer = null;
+            updateBreadcrumb();
+
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Loading campaigns...</p>
+                </div>
+            `;
+
+            try {
+                // Fetch campaigns from API
+                const response = await fetch(`${API_BASE_URL}/api/campaigns`);
+                if (!response.ok) throw new Error('Failed to fetch campaigns');
+                
+                const campaigns = await response.json();
+                
+                if (campaigns.length === 0) {
+                    // Show empty state
+                    content.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-bullhorn empty-icon"></i>
+                            <h2>No Campaigns Yet</h2>
+                            <p>Create your first AI-powered campaign to get started</p>
+                            <button onclick="createCampaigns()" class="primary-button">
+                                <i class="fas fa-magic"></i> Create First Campaign
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    renderCampaigns(campaigns);
+                }
+            } catch (error) {
+                // Show error state
+                content.innerHTML = `
+                    <div class="error-container">
+                        <i class="fas fa-exclamation-triangle error-icon"></i>
+                        <h2>Error Loading Campaigns</h2>
+                        <p>${error.message}</p>
+                        <button onclick="loadCampaigns()" class="secondary-button">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Render campaigns grid
+         * @param {Array} campaigns - Array of campaign objects
+         */
+        function renderCampaigns(campaigns) {
+            const content = document.getElementById('content');
+            
+            // Build campaigns grid HTML
+            const campaignsHTML = campaigns.map(campaign => `
+                <div class="campaign-card" onclick='selectCampaign(${JSON.stringify(campaign)})'>
+                    <div class="campaign-header">
+                        <div class="campaign-id">
+                            <i class="fas fa-tag"></i> Campaign ${campaign.campaign_id}
+                        </div>
+                        <div class="campaign-date">
+                            <i class="fas fa-calendar"></i>
+                            ${new Date(campaign.created_at).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <div class="campaign-description">
+                        ${campaign.parameter_description}
+                    </div>
+                    <div class="campaign-footer">
+                        <button class="view-button">
+                            <i class="fas fa-arrow-right"></i> View Customers
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-bullhorn stat-icon"></i>
+                        <div class="stat-content">
+                            <div class="stat-number">${campaigns.length}</div>
+                            <div class="stat-label">Active Campaigns</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="campaigns-grid">
+                    ${campaignsHTML}
+                </div>
+            `;
+        }
+
+        /**
+         * Select a campaign and load its customers
+         * @param {Object} campaign - Campaign object
+         */
+        async function selectCampaign(campaign) {
+            currentView = 'customers';
+            selectedCampaign = campaign;
+            selectedCustomer = null;
+            updateBreadcrumb();
+
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Loading customers for Campaign ${campaign.campaign_id}...</p>
+                </div>
+            `;
+
+            try {
+                // Fetch customers for this campaign
+                const response = await fetch(`${API_BASE_URL}/api/campaigns/${campaign.campaign_id}/customers`);
+                if (!response.ok) throw new Error('Failed to fetch customers');
+                
+                const customers = await response.json();
+                renderCustomers(customers);
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error-container">
+                        <i class="fas fa-exclamation-triangle error-icon"></i>
+                        <h2>Error Loading Customers</h2>
+                        <p>${error.message}</p>
+                        <button onclick="loadCampaigns()" class="secondary-button">
+                            <i class="fas fa-arrow-left"></i> Back to Campaigns
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Render customers grid
+         * @param {Array} customers - Array of customer objects
+         */
+        function renderCustomers(customers) {
+            const content = document.getElementById('content');
+            
+            if (customers.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users empty-icon"></i>
+                        <h2>No Customers Found</h2>
+                        <p>This campaign doesn't have any mapped customers yet.</p>
+                        <button onclick="loadCampaigns()" class="secondary-button">
+                            <i class="fas fa-arrow-left"></i> Back to Campaigns
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build customers grid HTML
+            const customersHTML = customers.map(customer => `
+                <div class="customer-card" onclick='selectCustomer("${customer._id}")'>
+                    <div class="customer-header">
+                        <div class="customer-name">
+                            <i class="fas fa-store"></i> ${customer.name}
+                        </div>
+                    </div>
+                    <div class="customer-info">
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>${customer.city || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-phone"></i>
+                            <span>${customer.contact_number || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-building"></i>
+                            <span>Size: ${customer.size || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fab fa-instagram"></i>
+                            <span>${customer.instagram_id || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div class="customer-footer">
+                        <button class="view-button">
+                            <i class="fas fa-arrow-right"></i> View Details
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-users stat-icon"></i>
+                        <div class="stat-content">
+                            <div class="stat-number">${customers.length}</div>
+                            <div class="stat-label">Mapped Customers</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-tag stat-icon"></i>
+                        <div class="stat-content">
+                            <div class="stat-number">${selectedCampaign.campaign_id}</div>
+                            <div class="stat-label">Campaign ID</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-header">
+                    <h3><i class="fas fa-store"></i> Campaign Customers</h3>
+                    <p>${selectedCampaign.parameter_description}</p>
+                </div>
+                <div class="customers-grid">
+                    ${customersHTML}
+                </div>
+            `;
+        }
+
+        /**
+         * Select a customer and show details
+         * @param {string} customerId - Customer ObjectId
+         */
+        async function selectCustomer(customerId) {
+            currentView = 'customer-detail';
+            updateBreadcrumb();
+
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Loading customer details...</p>
+                </div>
+            `;
+
+            try {
+                // Fetch customer details
+                const response = await fetch(`${API_BASE_URL}/api/customers/${customerId}`);
+                if (!response.ok) throw new Error('Failed to fetch customer');
+                
+                const customer = await response.json();
+                selectedCustomer = customer;
+                renderCustomerDetail(customer);
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error-container">
+                        <i class="fas fa-exclamation-triangle error-icon"></i>
+                        <h2>Error Loading Customer</h2>
+                        <p>${error.message}</p>
+                        <button onclick="selectCampaign(selectedCampaign)" class="secondary-button">
+                            <i class="fas fa-arrow-left"></i> Back to Customers
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Render customer detail view
+         * @param {Object} customer - Customer object
+         */
+        function renderCustomerDetail(customer) {
+            const content = document.getElementById('content');
+            
+            content.innerHTML = `
+                <div class="customer-detail-container">
+                    <!-- Customer Header -->
+                    <div class="detail-header">
+                        <div class="detail-title">
+                            <i class="fas fa-store"></i> ${customer.name}
+                        </div>
+                        <p class="detail-subtitle">Complete customer profile and interaction history</p>
+                    </div>
+
+                    <!-- Customer Information Grid -->
+                    <div class="detail-grid">
+                        <!-- Basic Information -->
+                        <div class="detail-section">
+                            <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+                            <div class="detail-item">
+                                <span class="detail-label">Business Name</span>
+                                <span class="detail-value">${customer.name}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">City</span>
+                                <span class="detail-value">${customer.city || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Business Size</span>
+                                <span class="detail-value">${customer.size || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Created At</span>
+                                <span class="detail-value">${new Date(customer.created_at).toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="detail-section">
+                            <h3><i class="fas fa-phone"></i> Contact Information</h3>
+                            <div class="detail-item">
+                                <span class="detail-label">Phone</span>
+                                <span class="detail-value">
+                                    <a href="tel:${customer.contact_number}">${customer.contact_number || 'N/A'}</a>
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Email</span>
+                                <span class="detail-value">
+                                    <a href="mailto:${customer.email}">${customer.email || 'N/A'}</a>
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Instagram</span>
+                                <span class="detail-value">
+                                    <a href="https://instagram.com/${(customer.instagram_id || '').replace('@', '')}" target="_blank">
+                                        ${customer.instagram_id || 'N/A'}
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Address</span>
+                                <span class="detail-value">${customer.address || 'N/A'}</span>
+                            </div>
+                        </div>
+
+                        <!-- Location & Description -->
+                        <div class="detail-section full-width">
+                            <h3><i class="fas fa-map-marker-alt"></i> Location & Details</h3>
+                            <div class="detail-item">
+                                <span class="detail-label">Google Maps</span>
+                                <span class="detail-value">
+                                    ${customer.google_maps_link ? 
+                                        `<a href="${customer.google_maps_link}" target="_blank">
+                                            <i class="fas fa-external-link-alt"></i> View on Maps
+                                        </a>` : 'N/A'}
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Description</span>
+                                <span class="detail-value">${customer.description || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-section">
+                        <h3><i class="fas fa-tasks"></i> Customer Actions</h3>
+                        <div class="action-buttons">
+                            <button onclick="viewInteractions('${customer._id}')" class="action-button">
+                                <i class="fas fa-history"></i> View History
+                            </button>
+                            <button onclick="generateNextMove('${customer._id}')" class="action-button primary">
+                                <i class="fas fa-forward"></i> Next Move
+                            </button>
+                            <button onclick="showAddResponseForm('${customer._id}')" class="action-button" style="background: linear-gradient(45deg, #17a2b8, #138496);">
+                                <i class="fas fa-comment-dots"></i> Add Customer Response
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add Customer Response Section (Hidden initially) -->
+                    <div id="add-response-section" class="add-response-section" style="display: none;">
+                        <h3><i class="fas fa-comment-dots"></i> Record Customer Response</h3>
+                        <p style="color: #666; margin-bottom: 1rem;">
+                            When a customer contacts you or responds to your outreach, record it here:
+                        </p>
+                        <div class="response-form">
+                            <label for="response-interaction-type" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                                <i class="fas fa-phone"></i> Interaction Type *
+                            </label>
+                            <select id="response-interaction-type" class="form-input" style="margin-bottom: 1rem;">
+                                <option value="call">📞 Call</option>
+                                <option value="email">📧 Email</option>
+                                <option value="meeting">🤝 Meeting</option>
+                            </select>
+                            
+                            <label for="response-customer-text" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                                <i class="fas fa-quote-left"></i> What did the customer say? *
+                            </label>
+                            <textarea 
+                                id="response-customer-text" 
+                                class="form-textarea" 
+                                placeholder="Enter what the customer said or wrote... Be specific and detailed."
+                                rows="5"></textarea>
+                            
+                            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                                <button onclick="submitStandaloneResponse('${customer._id}')" class="primary-button" style="flex: 1;">
+                                    <i class="fas fa-paper-plane"></i> Submit Response
+                                </button>
+                                <button onclick="hideAddResponseForm()" class="secondary-button">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                            
+                            <div id="response-status" style="margin-top: 1rem;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Interactions Section (Hidden initially) -->
+                    <div id="interactions-section" class="interactions-section" style="display: none;">
+                        <h3><i class="fas fa-comments"></i> Interaction History</h3>
+                        <div id="interactions-content"></div>
+                    </div>
+
+                    <!-- Next Action Section (Hidden initially) -->
+                    <div id="next-action-section" class="next-action-section" style="display: none;">
+                        <h3><i class="fas fa-lightbulb"></i> AI-Generated Next Action</h3>
+                        <div id="next-action-content"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * View customer interactions (toggle on/off)
+         * @param {string} customerId - Customer ObjectId
+         */
+        async function viewInteractions(customerId) {
+            const section = document.getElementById('interactions-section');
+            const content = document.getElementById('interactions-content');
+            
+            // Toggle: if already visible, hide it
+            if (section.style.display === 'block') {
+                section.style.display = 'none';
+                return;
+            }
+            
+            // Show and load interactions
+            section.style.display = 'block';
+            content.innerHTML = `
+                <div class="loading-mini">
+                    <i class="fas fa-spinner fa-spin"></i> Loading interactions...
+                </div>
+            `;
+
+            try {
+                // Fetch interactions from API
+                const response = await fetch(`${API_BASE_URL}/api/customers/${customerId}/interactions`);
+                if (!response.ok) throw new Error('Failed to fetch interactions');
+                
+                const data = await response.json();
+                const { interactions, summary } = data;
+
+                let html = '';
+                
+                // Show summary if exists
+                if (summary) {
+                    html += `
+                        <div class="summary-card">
+                            <h4><i class="fas fa-file-alt"></i> Conversation Summary</h4>
+                            <p>${summary}</p>
+                        </div>
+                    `;
+                }
+
+                // Show interactions
+                if (interactions && interactions.length > 0) {
+                    html += '<div class="interactions-list">';
+                    interactions.forEach(interaction => {
+                        html += `
+                            <div class="interaction-card ${interaction.sender}">
+                                <div class="interaction-header">
+                                    <span class="interaction-type">
+                                        <i class="fas fa-${interaction.type === 'call' ? 'phone' : interaction.type === 'email' ? 'envelope' : 'handshake'}"></i>
+                                        ${interaction.type}
+                                    </span>
+                                    <span class="interaction-sender">${interaction.sender}</span>
+                                    <span class="interaction-date">
+                                        ${new Date(interaction.timestamp || interaction.date).toLocaleString()}
+                                    </span>
+                                </div>
+                                <div class="interaction-content">
+                                    ${interaction.summary || interaction.interaction_summary}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                } else {
+                    html += `
+                        <div class="empty-state-mini">
+                            <i class="fas fa-inbox"></i>
+                            <p>No interactions recorded yet</p>
+                        </div>
+                    `;
+                }
+
+                content.innerHTML = html;
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error-mini">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error: ${error.message}</p>
+                        <button onclick="viewInteractions('${customerId}')" class="retry-button">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Generate next move using AI
+         * @param {string} customerId - Customer ObjectId
+         */
+        async function generateNextMove(customerId) {
+            const section = document.getElementById('next-action-section');
+            const content = document.getElementById('next-action-content');
+            
+            section.style.display = 'block';
+            content.innerHTML = `
+                <div class="agent-progress">
+                    <div class="progress-step active" id="step-check">
+                        <i class="fas fa-search"></i> Checking customer history...
+                    </div>
+                    <div class="progress-step" id="step-context">
+                        <i class="fas fa-database"></i> Fetching context...
+                    </div>
+                    <div class="progress-step" id="step-generate">
+                        <i class="fas fa-robot"></i> Generating AI suggestion...
+                    </div>
+                </div>
+            `;
+
+            // Simulate progress
+            setTimeout(() => {
+                document.getElementById('step-check').classList.remove('active');
+                document.getElementById('step-check').classList.add('completed');
+                document.getElementById('step-context').classList.add('active');
+            }, 1000);
+
+            setTimeout(() => {
+                document.getElementById('step-context').classList.remove('active');
+                document.getElementById('step-context').classList.add('completed');
+                document.getElementById('step-generate').classList.add('active');
+            }, 2000);
+
+            try {
+                // Call next-action API
+                const response = await fetch(`${API_BASE_URL}/api/customers/${customerId}/next-action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ customer_id: customerId })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || 'Failed to generate next action');
+                }
+                
+                const result = await response.json();
+                console.log('Next action result:', result);
+
+                // Complete the progress indicator
+                document.getElementById('step-generate').classList.remove('active');
+                document.getElementById('step-generate').classList.add('completed');
+
+                // Show the suggestion immediately with approval options
+                content.innerHTML = `
+                    <div class="suggestion-card">
+                        <div class="suggestion-header">
+                            <i class="fas fa-lightbulb"></i> AI Suggested Next Action
+                        </div>
+                        <div class="suggestion-content" id="ai-suggestion-text">
+                            ${result.suggestion.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
+                        </div>
+                        <div class="suggestion-footer">
+                            <p class="suggestion-note">
+                                <i class="fas fa-info-circle"></i>
+                                Review the AI suggestion and approve or request changes
+                            </p>
+                            
+                            <!-- Approval Actions -->
+                            <div class="approval-actions" id="approval-actions">
+                                <button onclick="approveSuggestion('${customerId}')" class="action-button" style="background: linear-gradient(45deg, #28a745, #20c997);">
+                                    <i class="fas fa-check"></i> Approve (OK)
+                                </button>
+                                <button onclick="requestChanges()" class="action-button" style="background: linear-gradient(45deg, #ffc107, #fd7e14);">
+                                    <i class="fas fa-edit"></i> Request Changes
+                                </button>
+                            </div>
+                            
+                            <!-- Changes Input (Hidden initially) -->
+                            <div class="changes-input" id="changes-input" style="display: none; margin-top: 1rem;">
+                                <textarea 
+                                    id="change-request" 
+                                    class="form-textarea" 
+                                    placeholder="Describe what changes you need..."
+                                    rows="3"></textarea>
+                                <button onclick="submitChanges('${customerId}')" class="action-button">
+                                    <i class="fas fa-redo"></i> Regenerate with Changes
+                                </button>
+                            </div>
+                            
+                            <!-- Success Message (Hidden initially) -->
+                            <div id="approval-success" style="display: none; margin-top: 1rem; padding: 1rem; background: #d4edda; color: #155724; border-radius: 8px;">
+                                <i class="fas fa-check-circle"></i> Action approved and stored! 
+                                Now you can execute this action and then record the customer's response.
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error generating next move:', error);
+                document.getElementById('step-generate').classList.remove('active');
+                content.innerHTML = `
+                    <div class="error-mini">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error: ${error.message}</p>
+                        <button onclick="generateNextMove('${customerId}')" class="retry-button">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Approve the AI suggestion
+         * @param {string} customerId - Customer ObjectId
+         */
+        async function approveSuggestion(customerId) {
+            const suggestionText = document.getElementById('ai-suggestion-text').textContent;
+            const approvalActions = document.getElementById('approval-actions');
+            const successMsg = document.getElementById('approval-success');
+            
+            // Disable buttons
+            approvalActions.style.display = 'none';
+            
+            // Show loading
+            successMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Storing approved action...';
+            successMsg.style.display = 'block';
+            successMsg.style.background = '#cce5ff';
+            successMsg.style.color = '#004085';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/customers/${customerId}/next-action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        approval: 'ok',
+                        suggestion: suggestionText
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to approve suggestion');
+                
+                const result = await response.json();
+                
+                // Show success
+                successMsg.innerHTML = `
+                    <i class="fas fa-check-circle"></i> <strong>Action approved and stored!</strong><br>
+                    <small>Now execute this action, then record the customer's response below.</small>
+                `;
+                successMsg.style.background = '#d4edda';
+                successMsg.style.color = '#155724';
+                
+                // Show customer response form
+                setTimeout(() => {
+                    const responseForm = document.getElementById('next-action-section');
+                    responseForm.innerHTML += `
+                        <div class="response-form" style="margin-top: 2rem;">
+                            <h4><i class="fas fa-reply"></i> Record Customer Response (After Execution)</h4>
+                            <p style="color: #666; margin-bottom: 1rem;">After you execute the action above, record what the customer said:</p>
+                            <select id="interaction-type" class="form-input">
+                                <option value="call">Call</option>
+                                <option value="email">Email</option>
+                                <option value="meeting">Meeting</option>
+                            </select>
+                            <textarea 
+                                id="customer-response" 
+                                class="form-textarea" 
+                                placeholder="Enter what the customer said or how they responded..."
+                                rows="4"></textarea>
+                            <button onclick="submitCustomerResponse('${customerId}')" class="primary-button">
+                                <i class="fas fa-paper-plane"></i> Submit Customer Response
+                            </button>
+                        </div>
+                    `;
+                }, 500);
+                
+            } catch (error) {
+                successMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}`;
+                successMsg.style.background = '#f8d7da';
+                successMsg.style.color = '#721c24';
+                approvalActions.style.display = 'flex';
+            }
+        }
+        
+        /**
+         * Show the changes input field
+         */
+        function requestChanges() {
+            document.getElementById('approval-actions').style.display = 'none';
+            document.getElementById('changes-input').style.display = 'block';
+        }
+        
+        /**
+         * Submit changes and regenerate suggestion
+         * @param {string} customerId - Customer ObjectId
+         */
+        async function submitChanges(customerId) {
+            const changes = document.getElementById('change-request').value.trim();
+            
+            if (!changes) {
+                alert('Please describe what changes you need');
+                return;
+            }
+            
+            const changesInput = document.getElementById('changes-input');
+            changesInput.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Regenerating with your feedback...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/customers/${customerId}/next-action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        approval: changes,  // Pass the feedback
+                        suggestion: null
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to regenerate');
+                
+                const result = await response.json();
+                
+                // Reload the next move with new suggestion
+                alert('Suggestion regenerated! Reloading...');
+                generateNextMove(customerId);
+                
+            } catch (error) {
+                changesInput.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        /**
+         * Show the add response form
+         * @param {string} customerId - Customer ObjectId
+         */
+        function showAddResponseForm(customerId) {
+            const section = document.getElementById('add-response-section');
+            section.style.display = 'block';
+            
+            // Scroll to the form
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Clear previous inputs
+            document.getElementById('response-interaction-type').value = 'call';
+            document.getElementById('response-customer-text').value = '';
+            document.getElementById('response-status').innerHTML = '';
+        }
+        
+        /**
+         * Hide the add response form
+         */
+        function hideAddResponseForm() {
+            document.getElementById('add-response-section').style.display = 'none';
+            document.getElementById('response-customer-text').value = '';
+            document.getElementById('response-status').innerHTML = '';
+        }
+        
+        /**
+         * Submit standalone customer response (using adder.py)
+         * @param {string} customerId - Customer ObjectId
+         */
+        async function submitStandaloneResponse(customerId) {
+            const interactionType = document.getElementById('response-interaction-type').value;
+            const customerResponse = document.getElementById('response-customer-text').value.trim();
+            const statusDiv = document.getElementById('response-status');
+
+            if (!customerResponse) {
+                statusDiv.innerHTML = '<div style="background: #fff3cd; color: #856404; padding: 0.75rem; border-radius: 8px;"><i class="fas fa-exclamation-triangle"></i> Please enter what the customer said</div>';
+                return;
+            }
+
+            // Show loading
+            statusDiv.innerHTML = '<div style="background: #cce5ff; color: #004085; padding: 0.75rem; border-radius: 8px;"><i class="fas fa-spinner fa-spin"></i> Recording response and updating summary...</div>';
+
+            try {
+                // Call add-response API (uses adder.py agent)
+                const response = await fetch(`${API_BASE_URL}/api/customers/${customerId}/add-response`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        interaction_type: interactionType,
+                        customer_response: customerResponse
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || 'Failed to add response');
+                }
+                
+                const result = await response.json();
+
+                // Show success
+                statusDiv.innerHTML = `
+                    <div style="background: #d4edda; color: #155724; padding: 0.75rem; border-radius: 8px;">
+                        <i class="fas fa-check-circle"></i> <strong>Response recorded successfully!</strong><br>
+                        <small>Conversation summary has been updated automatically.</small>
+                    </div>
+                `;
+                
+                // Clear form
+                document.getElementById('response-customer-text').value = '';
+                
+                // Reload interactions to show the new one
+                setTimeout(() => {
+                    viewInteractions(customerId);
+                    hideAddResponseForm();
+                }, 2000);
+
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div style="background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 8px;">
+                        <i class="fas fa-exclamation-circle"></i> Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Submit customer response (from Next Move workflow)
+         * @param {string} customerId - Customer ObjectId
+         */
+        async function submitCustomerResponse(customerId) {
+            const interactionType = document.getElementById('interaction-type').value;
+            const customerResponse = document.getElementById('customer-response').value.trim();
+
+            if (!customerResponse) {
+                alert('Please enter the customer\'s response');
+                return;
+            }
+
+            try {
+                // Call add-response API
+                const response = await fetch(`${API_BASE_URL}/api/customers/${customerId}/add-response`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        interaction_type: interactionType,
+                        customer_response: customerResponse
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to add response');
+                
+                const result = await response.json();
+
+                // Show success and refresh interactions
+                alert('✅ Customer response recorded successfully!');
+                document.getElementById('customer-response').value = '';
+                
+                // Reload interactions to show the new one
+                viewInteractions(customerId);
+
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        /**
+         * Update breadcrumb navigation
+         */
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            let html = `
+                <div class="breadcrumb-item ${currentView === 'campaigns' ? 'active' : ''}" onclick="loadCampaigns()">
+                    <i class="fas fa-home"></i>
+                    <span>All Campaigns</span>
+                </div>
+            `;
+
+            if (currentView === 'customers' && selectedCampaign) {
+                html += `
+                    <i class="fas fa-chevron-right breadcrumb-separator"></i>
+                    <div class="breadcrumb-item active" onclick="selectCampaign(selectedCampaign)">
+                        <i class="fas fa-users"></i>
+                        <span>Campaign ${selectedCampaign.campaign_id}</span>
+                    </div>
+                `;
+            }
+
+            if (currentView === 'customer-detail' && selectedCustomer) {
+                html += `
+                    <i class="fas fa-chevron-right breadcrumb-separator"></i>
+                    <div class="breadcrumb-item" onclick="selectCampaign(selectedCampaign)">
+                        <i class="fas fa-users"></i>
+                        <span>Campaign ${selectedCampaign.campaign_id}</span>
+                    </div>
+                    <i class="fas fa-chevron-right breadcrumb-separator"></i>
+                    <div class="breadcrumb-item active">
+                        <i class="fas fa-user"></i>
+                        <span>${selectedCustomer.name}</span>
+                    </div>
+                `;
+            }
+
+            breadcrumb.innerHTML = html;
+        }
+
+        // Alias for showing campaigns view
+        function showCampaignsView() {
+            loadCampaigns();
+        }
+    </script>
+</body>
+</html>

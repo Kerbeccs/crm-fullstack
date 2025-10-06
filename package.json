@@ -1,0 +1,14 @@
+{
+  "name": "crm-fullstack",
+  "version": "1.0.0",
+  "description": "Full Stack CRM Application",
+  "scripts": {
+    "start": "cd backend && gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT",
+    "build": "cd backend && pip install -r requirements.txt",
+    "dev:backend": "cd backend && uvicorn main:app --reload",
+    "dev:frontend": "cd frontend && python -m http.server 3000"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
