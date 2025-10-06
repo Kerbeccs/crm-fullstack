@@ -213,7 +213,7 @@
         // API Configuration
         const API_BASE_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:8000' 
-            : 'https://your-backend-name.onrender.com';
+            : 'https://crm-fullstack.onrender.com';
 
         // Load dashboard stats on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -226,9 +226,15 @@
          */
         async function loadDashboardStats() {
             try {
+                console.log('Fetching stats from:', `${API_BASE_URL}/api/stats`);
                 // Fetch stats from backend API
                 const response = await fetch(`${API_BASE_URL}/api/stats`);
-                if (!response.ok) throw new Error('Failed to fetch stats');
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`Failed to fetch stats: ${response.status} ${errorText}`);
+                }
                 
                 const stats = await response.json();
                 
